@@ -1,0 +1,9 @@
+{
+  "name": "No Grau - Lava Jato",
+  "short_name": "No Grau",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f7fb",
+  "theme_color": "#0b2545",
+  "icons": [{ "src": "/icone.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

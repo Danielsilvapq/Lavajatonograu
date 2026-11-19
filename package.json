@@ -1,0 +1,9 @@
+{
+  "name": "nograu-lava-jato",
+  "version": "1.0.0",
+  "description": "Sistema de gestão do Lava Jato No Grau",
+  "main": "server.js",
+  "private": true,
+  "engines": { "node": ">=22.13" },
+  "scripts": { "start": "node server.js" }
+}

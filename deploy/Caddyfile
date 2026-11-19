@@ -1,0 +1,4 @@
+# Troque pelo seu domínio. O Caddy gera o certificado HTTPS sozinho.
+sistema.seudominio.com.br {
+    reverse_proxy 127.0.0.1:3000
+}

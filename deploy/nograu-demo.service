@@ -1,0 +1,19 @@
+[Unit]
+Description=Sistema No Grau - DEMONSTRACAO (dados ficticios, reinicia todo dia)
+After=network.target
+
+[Service]
+Type=simple
+User=nograu
+WorkingDirectory=/opt/nograu
+Environment=PORT=3001
+Environment=HOST=127.0.0.1
+Environment=COOKIE_SECURE=1
+ExecStart=/usr/bin/node demo.js
+Restart=always
+RestartSec=3
+# reinicia a cada 24h para recriar os dados de demonstração
+RuntimeMaxSec=1d
+
+[Install]
+WantedBy=multi-user.target
