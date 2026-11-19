@@ -39,6 +39,8 @@ Não precisa instalar nada além do **Node.js** (versão 22.13 ou mais nova). O 
 
 ## 2. Online, no servidor da Oracle Cloud
 
+> **Passo a passo detalhado, sem domínio, no mesmo servidor de outros sistemas:** veja [INSTALAR-NA-ORACLE.md](INSTALAR-NA-ORACLE.md).
+
 Pré-requisitos:
 - Uma VM **Ubuntu** na Oracle Cloud (a Always Free serve).
 - Um **domínio** apontando para o IP público da VM, por exemplo um registro `A` para `sistema.seudominio.com.br`.
