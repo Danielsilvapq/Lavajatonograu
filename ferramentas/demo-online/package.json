@@ -1,0 +1,7 @@
+{
+  "name": "nograu-demo-online",
+  "private": true,
+  "description": "Gera a versão de demonstração que roda inteira no navegador",
+  "scripts": { "gerar": "node gerar.js" },
+  "dependencies": { "buffer": "6.0.3" }
+}
