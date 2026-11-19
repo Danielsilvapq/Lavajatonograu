@@ -48,7 +48,11 @@ Pré-requisitos:
    ```bash
    scp -r nograu ubuntu@IP_DA_VM:~
    ```
-3. **Na VM**, rode o instalador com o seu domínio:
+3. **Na VM**, confira o servidor antes (só lê, não muda nada):
+   ```bash
+   sudo bash deploy/verificar-servidor.sh
+   ```
+   Depois rode o instalador com o seu domínio:
    ```bash
    cd ~/nograu
    sudo bash deploy/instalar-oracle.sh sistema.seudominio.com.br
