@@ -517,21 +517,26 @@ const dataBR = s => s ? s.slice(0, 10).split('-').reverse().join('/') + (s.lengt
 const NOME_STATUS = { agendado: 'Agendado', aguardando: 'Aguardando', lavando: 'Em lavagem', pronto: 'Pronto', entregue: 'Entregue', cancelado: 'Cancelado' };
 const NOME_FORMA = { dinheiro: 'Dinheiro', pix: 'Pix', debito: 'Cartão de débito', credito: 'Cartão de crédito', outro: 'Outro' };
 const NOME_PORTE = { pequeno: 'Pequeno', medio: 'Médio', grande: 'Grande', moto: 'Moto' };
+let LOGO_PDF = null; // logo para o cabeçalho do PDF (fundo preto)
+try { LOGO_PDF = fs.readFileSync(path.join(__dirname, 'public', 'logo-pdf.jpg')); } catch {}
 
 function pdfOrdem(o, cfg) {
   const doc = new Documento({ margem: 40 });
-  const M = 40, W = doc.L - 2 * M, AZUL = '#0b2545', AGUA = '#1e9bd7', SUAVE = '#637083';
+  const M = 40, W = doc.L - 2 * M, AZUL = '#0e0e10', AGUA = '#d42a35', SUAVE = '#66666f';
   const num = String(o.id).padStart(6, '0');
   // cabeçalho
-  doc.retangulo(0, 0, doc.L, 96, { preencher: AZUL });
-  doc.texto(M, 24, cfg.nome_empresa || 'Lava Jato', { tam: 18, negrito: true, cor: '#ffffff' });
+  doc.retangulo(0, 0, doc.L, 104, { preencher: AZUL });
+  doc.retangulo(0, 104, doc.L, 3, { preencher: AGUA });
+  const tl = LOGO_PDF ? doc.imagem(LOGO_PDF, M, 9, 90, 86) : null;
+  const xt = tl ? M + tl.w + 14 : M;
+  doc.texto(xt, 26, cfg.nome_empresa || 'Lava Jato', { tam: 18, negrito: true, cor: '#ffffff' });
   const linhasEmp = [cfg.cnpj ? `CNPJ: ${cfg.cnpj}` : '', cfg.endereco, cfg.telefone ? `Tel.: ${cfg.telefone}` : ''].filter(Boolean);
-  linhasEmp.forEach((l, i) => doc.texto(M, 48 + i * 13, l, { tam: 9, cor: '#cfdbec' }));
-  doc.texto(M, 22, 'ORDEM DE SERVIÇO', { tam: 9, negrito: true, cor: '#8fc9ea', alinhar: 'dir', larg: W });
-  doc.texto(M, 34, `Nº ${num}`, { tam: 20, negrito: true, cor: '#ffffff', alinhar: 'dir', larg: W });
-  doc.texto(M, 60, `${o.status === 'agendado' ? 'Agendado para' : 'Data'}: ${dataBR(o.data_ref)}`, { tam: 9, cor: '#cfdbec', alinhar: 'dir', larg: W });
-  doc.texto(M, 73, `Situação: ${NOME_STATUS[o.status] || o.status}`, { tam: 9, cor: '#cfdbec', alinhar: 'dir', larg: W });
-  doc.y = 116;
+  linhasEmp.forEach((l, i) => doc.texto(xt, 50 + i * 13, l, { tam: 9, cor: '#c9c9cf' }));
+  doc.texto(M, 24, 'ORDEM DE SERVIÇO', { tam: 9, negrito: true, cor: '#f3e3b5', alinhar: 'dir', larg: W });
+  doc.texto(M, 36, `Nº ${num}`, { tam: 20, negrito: true, cor: '#ffffff', alinhar: 'dir', larg: W });
+  doc.texto(M, 62, `${o.status === 'agendado' ? 'Agendado para' : 'Data'}: ${dataBR(o.data_ref)}`, { tam: 9, cor: '#c9c9cf', alinhar: 'dir', larg: W });
+  doc.texto(M, 75, `Situação: ${NOME_STATUS[o.status] || o.status}`, { tam: 9, cor: '#c9c9cf', alinhar: 'dir', larg: W });
+  doc.y = 126;
 
   // bloco com título e pares rótulo/valor em duas colunas
   const bloco = (titulo, pares) => {

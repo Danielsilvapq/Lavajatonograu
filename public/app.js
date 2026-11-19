@@ -184,12 +184,12 @@ function montarLayout() {
   $('#app').innerHTML = `
   <div class="layout">
     <aside class="lateral">
-      <div class="marca"><img src="/icone.svg" alt=""><span>${esc(estado.empresa)}<small>Gestão de lava jato</small></span></div>
+      <div class="marca"><img src="/logo.png" alt="Logo ${esc(estado.empresa)}"><span>${esc(estado.empresa)}<small>Lava jato + gastrobar</small></span></div>
       <nav class="menu">${itens}</nav>
       <div class="usuario-box"><b>${esc(estado.usuario.nome)}</b>${dono() ? 'Dono' : 'Funcionário'}<br><button class="peq" id="sair">Sair</button></div>
     </aside>
     <div>
-      <div class="barra-mobile"><button id="abrir-menu" aria-label="Menu">☰</button>${esc(estado.empresa)}</div>
+      <div class="barra-mobile"><button id="abrir-menu" aria-label="Menu">☰</button><img src="/logo.png" alt="">${esc(estado.empresa)}</div>
       ${estado.demo ? `<div class="faixa-demo"><b>Demonstração</b> · dados fictícios. Fique à vontade para testar: tudo volta ao original quando a demonstração reinicia.</div>` : ''}
       <main class="principal" id="conteudo"></main>
     </div>
@@ -247,7 +247,7 @@ async function iniciar() {
 
 function telaLogin() {
   $('#app').innerHTML = `<div class="tela-login"><form class="card" id="f">
-    <div class="marca"><img src="/icone.svg" alt="" width="40"><span>${esc(estado.empresa)}<small>Entre para continuar</small></span></div>
+    <div class="marca"><img src="/logo.png" alt="Logo ${esc(estado.empresa)}"><span>${esc(estado.empresa)}<small>Entre para continuar</small></span></div>
     <div class="campo"><label>Login</label><input name="login" autocomplete="username" required autocapitalize="none"></div>
     <div class="campo"><label>Senha</label><input name="senha" type="password" autocomplete="current-password" required></div>
     <button class="prim" style="width:100%;justify-content:center">Entrar</button>
@@ -260,7 +260,7 @@ function telaLogin() {
 
 function telaSetup() {
   $('#app').innerHTML = `<div class="tela-login"><form class="card" id="f">
-    <div class="marca"><img src="/icone.svg" alt="" width="40"><span>Bem-vindo!<small>Crie o acesso do dono</small></span></div>
+    <div class="marca"><img src="/logo.png" alt="Logo No Grau"><span>Bem-vindo!<small>Crie o acesso do dono</small></span></div>
     <div class="campo"><label>Seu nome</label><input name="nome" required></div>
     <div class="campo"><label>Login</label><input name="login" required autocapitalize="none"></div>
     <div class="campo"><label>Senha (mín. 6 caracteres)</label><input name="senha" type="password" minlength="6" required></div>
@@ -609,7 +609,7 @@ function imprimirOS(o) {
   w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>OS #${o.id}</title><style>
     body{font:13px/1.4 ui-monospace,Consolas,monospace;width:300px;margin:10px auto;color:#000} h1{font-size:16px;text-align:center;margin:0}
     .c{text-align:center} hr{border:0;border-top:1px dashed #000;margin:8px 0} table{width:100%;border-collapse:collapse} td{padding:2px 0} td.d{text-align:right}</style></head><body>
-    <h1>${esc(c.nome_empresa)}</h1><div class="c">${c.cnpj ? 'CNPJ ' + esc(c.cnpj) + '<br>' : ''}${esc(c.endereco || '')}<br>${esc(c.telefone || '')}</div><hr>
+    <div class="c"><img src="${location.origin}/logo.png" alt="" style="width:110px;filter:grayscale(1) contrast(1.2)"></div><h1>${esc(c.nome_empresa)}</h1><div class="c">${c.cnpj ? 'CNPJ ' + esc(c.cnpj) + '<br>' : ''}${esc(c.endereco || '')}<br>${esc(c.telefone || '')}</div><hr>
     <b>ORDEM DE SERVIÇO #${o.id}</b><br>${dataHoraBR(o.data_ref)}<br>Cliente: ${esc(o.cliente_nome || '')}<br>${o.cliente_documento ? 'CPF/CNPJ: ' + esc(o.cliente_documento) + '<br>' : ''}${esc(o.cliente_telefone || '')}<br>
     Veículo: ${esc([o.placa, o.modelo, o.cor].filter(Boolean).join(' / '))}<hr>
     <table>${o.itens.map(i => `<tr><td>${esc(i.descricao)}</td><td class="d">${reais(i.valor)}</td></tr>`).join('')}

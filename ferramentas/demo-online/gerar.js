@@ -15,8 +15,8 @@ const modulo = (id, src) => `${JSON.stringify(id)}: function (require, module, e
 let app = ler(path.join(PROJ, 'public/app.js'));
 const troca = (de, para) => { if (!app.includes(de)) throw new Error('Trecho não encontrado: ' + de.slice(0, 60)); app = app.replace(de, para); };
 troca('tudo volta ao original quando a demonstração reinicia.', 'tudo volta ao original quando você recarrega a página.');
-const icone0 = 'data:image/svg+xml;base64,' + Buffer.from(ler(path.join(PROJ, 'public/icone.svg'))).toString('base64');
-app = app.split('src="/api/').join('data-src-api="/api/').split('src="/icone.svg"').join('src="' + icone0 + '"');
+// imagens da API sem "src" (a página preenche); a logo vai como arquivo ao lado da página
+app = app.split('src="/api/').join('data-src-api="/api/').split('src="/logo.png"').join('src="logo.png"');
 
 const fontes = [
   modulo('/app/db.js', ler(path.join(PROJ, 'db.js'))),
@@ -31,7 +31,8 @@ const fontes = [
 
 const fotos = fs.readdirSync(path.join(PROJ, 'demo/fotos')).filter(f => f.endsWith('.jpg'));
 for (const f of fotos) fs.copyFileSync(path.join(PROJ, 'demo/fotos', f), path.join(DEST, 'fotos', f));
-const icone = 'data:image/svg+xml;base64,' + Buffer.from(ler(path.join(PROJ, 'public/icone.svg'))).toString('base64');
+for (const f of ['logo.png', 'logo-pdf.jpg']) fs.copyFileSync(path.join(PROJ, 'public', f), path.join(DEST, f));
+const icone = 'logo.png';
 
 // ---------- nograu.js: ambiente "Node" dentro do navegador ----------
 const js = `// Sistema No Grau - demonstração online. O servidor e o banco rodam dentro do navegador.
@@ -210,6 +211,7 @@ async function iniciar() {
   SQL = await window.initSqlJs();
   window.Buffer = carregar('buffer').Buffer;
   await Promise.all(FOTOS_DEMO.map(async n => { try { const r = await fetchOriginal('fotos/' + n); if (r.ok) sistemaArquivos.writeFileSync('/app/demo/fotos/' + n, new Uint8Array(await r.arrayBuffer())); } catch {} }));
+  try { const r = await fetchOriginal('logo-pdf.jpg'); if (r.ok) sistemaArquivos.writeFileSync('/app/public/logo-pdf.jpg', new Uint8Array(await r.arrayBuffer())); } catch {}
   carregar('/app/demo.js'); // cria os dados de exemplo e "liga" o servidor
   console.log('Demonstração pronta em ' + Math.round(performance.now() - t0) + ' ms');
   (function () {
@@ -234,18 +236,18 @@ ${css}
 body { background: var(--fundo); color: var(--texto); }
 img[data-src-api]:not([src]) { visibility: hidden; }
 #imprimir, #fechar, a[href*="baixar=1"], a[href="/api/backup"], a[download] { display: none !important; }
-.carregando { min-height: 100vh; display: grid; place-items: center; padding: 16px; background: linear-gradient(160deg, var(--azul), #134074); color: #fff; text-align: center; }
-.carregando .gota { width: 56px; height: 56px; margin: 0 auto 14px; animation: pulsar 1.2s ease-in-out infinite; }
+.carregando { min-height: 100vh; display: grid; place-items: center; padding: 16px; background: radial-gradient(ellipse at 50% 0%, #3a0c11 0%, var(--azul) 60%); color: #fff; text-align: center; }
+.carregando .gota { display: block; width: 170px; height: auto; margin: 0 auto 14px; animation: pulsar 1.6s ease-in-out infinite; }
 @keyframes pulsar { 50% { transform: scale(.88); opacity: .7; } }
 @media (prefers-reduced-motion: reduce) { .carregando .gota { animation: none; } }
-.visor-pdf { position: fixed; inset: 0; z-index: 70; background: rgba(11, 37, 69, .82); display: flex; flex-direction: column; }
+.visor-pdf { position: fixed; inset: 0; z-index: 70; background: rgba(10, 10, 12, .85); display: flex; flex-direction: column; }
 .visor-pdf-barra { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 10px max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px)); background: var(--azul); color: #fff; padding-top: calc(10px + env(safe-area-inset-top, 0px)); }
-.visor-pdf-barra span { font-size: 13px; color: #b8c7dc; flex: 1; min-width: 180px; }
+.visor-pdf-barra span { font-size: 13px; color: #c9c9cf; flex: 1; min-width: 180px; }
 .visor-pdf-paginas { flex: 1; overflow: auto; padding: 16px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
 .visor-pdf-paginas canvas { background: #fff; box-shadow: 0 6px 24px rgba(0, 0, 0, .35); border-radius: 2px; max-width: 100%; height: auto; }
 .visor-pdf-paginas .vazio { color: #fff; }
 </style>
-<div id="app"><div class="carregando"><div><img class="gota" src="${icone}" alt=""><b style="font-size:20px">Lava Jato No Grau</b><br><small style="color:#b8c7dc">Preparando a demonstração…</small></div></div></div>
+<div id="app"><div class="carregando"><div><img class="gota" src="${icone}" alt=""><b style="font-size:20px">Lava Jato No Grau</b><br><small style="color:#f3e3b5">Preparando a demonstração…</small></div></div></div>
 <div id="modal" class="modal" hidden><div class="modal-caixa" role="dialog" aria-modal="true"></div></div>
 <div id="toast" class="toast" hidden></div>
 <script src="https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/sql-asm.js"></script>

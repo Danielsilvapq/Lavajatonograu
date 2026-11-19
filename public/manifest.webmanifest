@@ -3,7 +3,7 @@
   "short_name": "No Grau",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#f4f7fb",
-  "theme_color": "#0b2545",
-  "icons": [{ "src": "/icone.svg", "sizes": "any", "type": "image/svg+xml" }]
+  "background_color": "#0e0e10",
+  "theme_color": "#0e0e10",
+  "icons": [{ "src": "/icone-192.png", "sizes": "192x192", "type": "image/png" }, { "src": "/icone-512.png", "sizes": "512x512", "type": "image/png" }]
 }
