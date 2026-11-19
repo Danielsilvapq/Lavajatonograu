@@ -41,7 +41,9 @@ livres=(); p=3020
 while [ ${#livres[@]} -lt 2 ] && [ $p -lt 3100 ]; do porta_ocupada $p || livres+=("$p"); p=$((p + 1)); done
 if systemctl is-active --quiet nograu 2>/dev/null; then echo "  O No Grau JÁ está instalado aqui (serviço nograu ativo)."; fi
 echo "  Portas livres para o No Grau: ${livres[0]} (sistema) e ${livres[1]} (demonstração)"
-echo "  Comando sugerido:"
+echo "  Comando sugerido (sem domínio, acesso por IP e porta):"
+echo "    sudo PORTA=${livres[0]} DEMO_PORTA=${livres[1]} bash deploy/instalar-oracle.sh --sem-dominio --com-demo"
+echo "  Com domínio:"
 echo "    sudo PORTA=${livres[0]} DEMO_PORTA=${livres[1]} bash deploy/instalar-oracle.sh SEU-DOMINIO [DOMINIO-DA-DEMO]"
 echo
 echo "Copie tudo acima e mande para o Claude conferir antes de instalar."

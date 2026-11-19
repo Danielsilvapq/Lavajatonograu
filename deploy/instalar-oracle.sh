@@ -7,9 +7,20 @@
 #   sudo bash deploy/instalar-oracle.sh sistema.seudominio.com.br [demo.seudominio.com.br]
 # Para escolher as portas internas (padrão 3000 e 3001):
 #   sudo PORTA=3020 DEMO_PORTA=3021 bash deploy/instalar-oracle.sh sistema.seudominio.com.br
+# SEM DOMÍNIO (acesso por http://IP-DO-SERVIDOR:PORTA, como outros sistemas do servidor):
+#   sudo PORTA=3020 bash deploy/instalar-oracle.sh --sem-dominio
+#   sudo PORTA=3020 DEMO_PORTA=3021 bash deploy/instalar-oracle.sh --sem-dominio --com-demo
 set -euo pipefail
-DOMINIO="${1:?Informe o domínio. Ex.: sudo bash deploy/instalar-oracle.sh sistema.nograu.com.br}"
-DEMO="${2:-}"
+SEM_DOMINIO=""; DOMINIO=""; DEMO=""
+if [ "${1:-}" = "--sem-dominio" ]; then
+  SEM_DOMINIO=1
+  if [ "${2:-}" = "--com-demo" ]; then DEMO=sim; fi
+else
+  DOMINIO="${1:?Informe o domínio (ex.: sistema.nograu.com.br) ou use --sem-dominio}"
+  DEMO="${2:-}"
+fi
+# sem domínio o sistema atende direto na porta; com domínio, só por dentro (o Caddy/Nginx entrega)
+if [ -n "$SEM_DOMINIO" ]; then HOST_SERVICO=0.0.0.0; COOKIE_SEGURO=0; else HOST_SERVICO=127.0.0.1; COOKIE_SEGURO=1; fi
 PORTA="${PORTA:-3000}"
 DEMO_PORTA="${DEMO_PORTA:-3001}"
 ORIGEM="$(cd "$(dirname "$0")/.." && pwd)"
@@ -25,17 +36,19 @@ echo ">> Conferindo o servidor"
 for p in "$PORTA" ${DEMO:+"$DEMO_PORTA"}; do
   if porta_ocupada "$p" && ! { servico_ativo nograu && [ "$p" = "$PORTA" ]; } && ! { servico_ativo nograu-demo && [ "$p" = "$DEMO_PORTA" ]; }; then
     echo "!! A porta $p já está em uso por outro sistema. Escolha outra, por exemplo:"
-    echo "   sudo PORTA=3020 DEMO_PORTA=3021 bash deploy/instalar-oracle.sh $DOMINIO $DEMO"
+    echo "   sudo PORTA=3020 DEMO_PORTA=3021 bash deploy/instalar-oracle.sh ${SEM_DOMINIO:+--sem-dominio} $DOMINIO ${DEMO:+$([ -n "$SEM_DOMINIO" ] && echo --com-demo || echo "$DEMO")}"
     exit 1
   fi
 done
 WEB=""
-if servico_ativo nginx; then WEB=nginx
+if [ -n "$SEM_DOMINIO" ]; then WEB=nenhum-necessario
+elif servico_ativo nginx; then WEB=nginx
 elif servico_ativo caddy || command -v caddy >/dev/null; then WEB=caddy
 elif servico_ativo apache2 || servico_ativo httpd; then
   echo "!! Este servidor usa Apache. Instale o sistema com PORTA livre e me peça a configuração do Apache."; exit 1
 fi
-echo "   Servidor web encontrado: ${WEB:-nenhum (vou instalar o Caddy)}"
+if [ -n "$SEM_DOMINIO" ]; then echo "   Sem domínio: o No Grau atende direto na porta $PORTA (Caddy/Nginx não são alterados)"
+else echo "   Servidor web encontrado: ${WEB:-nenhum (vou instalar o Caddy)}"; fi
 
 # ---------- 2. Node.js próprio do No Grau (não mexe no Node do servidor) ----------
 NODE_BIN=""
@@ -74,8 +87,8 @@ Type=simple
 User=nograu
 WorkingDirectory=$DESTINO
 Environment=PORT=$2
-Environment=HOST=127.0.0.1
-Environment=COOKIE_SECURE=1
+Environment=HOST=$HOST_SERVICO
+Environment=COOKIE_SECURE=$COOKIE_SEGURO
 ExecStart=$NODE_BIN $3
 Restart=always
 RestartSec=3
@@ -96,7 +109,9 @@ sleep 2
 curl -fsS "http://127.0.0.1:$PORTA/api/status" >/dev/null || { echo "!! O sistema não respondeu. Veja: sudo journalctl -u nograu -n 50"; exit 1; }
 
 # ---------- 5. site com HTTPS (sem mexer nos outros sites) ----------
-if [ "$WEB" = nginx ]; then
+if [ -n "$SEM_DOMINIO" ]; then
+  echo ">> Sem domínio: nenhuma configuração de Caddy/Nginx é feita"
+elif [ "$WEB" = nginx ]; then
   echo ">> Configurando o Nginx para $DOMINIO ${DEMO:+e $DEMO}"
   bloco() { cat <<EOF
 server {
@@ -142,13 +157,32 @@ else
   caddy validate --config "$CF" --adapter caddyfile >/dev/null && systemctl reload caddy || { echo "!! Erro na configuração do Caddy; o arquivo anterior está salvo ao lado."; exit 1; }
 fi
 
-# ---------- 6. firewall da VM (portas 80 e 443) ----------
+# ---------- 6. firewall da VM ----------
+if [ -n "$SEM_DOMINIO" ]; then PORTAS_ABRIR="$PORTA${DEMO:+ $DEMO_PORTA}"; else PORTAS_ABRIR="80 443"; fi
+echo ">> Liberando no firewall da VM a(s) porta(s): $PORTAS_ABRIR"
 if command -v iptables >/dev/null; then
-  for p in 80 443; do iptables -C INPUT -p tcp --dport $p -j ACCEPT 2>/dev/null || iptables -I INPUT 6 -p tcp --dport $p -j ACCEPT; done
-  command -v netfilter-persistent >/dev/null && netfilter-persistent save >/dev/null 2>&1 || true
+  for p in $PORTAS_ABRIR; do
+    iptables -C INPUT -p tcp --dport "$p" -j ACCEPT 2>/dev/null && continue
+    # entra logo antes do REJECT padrão das imagens da Oracle (ou no fim, se não houver)
+    pos=$(iptables -L INPUT --line-numbers -n 2>/dev/null | awk '$2=="REJECT" {print $1; exit}')
+    if [ -n "$pos" ]; then iptables -I INPUT "$pos" -p tcp --dport "$p" -j ACCEPT 2>/dev/null; else iptables -A INPUT -p tcp --dport "$p" -j ACCEPT 2>/dev/null; fi \
+      || echo "!! Não consegui liberar a porta $p no firewall da VM. Me mande a saída de: sudo iptables -L INPUT --line-numbers -n"
+  done
+  if command -v netfilter-persistent >/dev/null; then netfilter-persistent save >/dev/null 2>&1 || true
+  else echo "!! Para a regra valer depois de reiniciar a VM: sudo apt install -y iptables-persistent"; fi
 fi
 
 echo
-echo "Pronto! Acesse https://$DOMINIO"
-if [ -n "$DEMO" ]; then echo "Demonstração: https://$DEMO"; fi
-echo "Lembre de liberar as portas 80 e 443 na Security List da VCN, no painel da Oracle (se ainda não estiverem)."
+if [ -n "$SEM_DOMINIO" ]; then
+  IP=$(curl -fsS --max-time 5 https://api.ipify.org 2>/dev/null || curl -fsS --max-time 5 https://ifconfig.me 2>/dev/null || echo "IP-DO-SERVIDOR")
+  echo "Pronto! Acesse http://$IP:$PORTA"
+  if [ -n "$DEMO" ]; then echo "Demonstração: http://$IP:$DEMO_PORTA"; fi
+  echo
+  echo "IMPORTANTE: no painel da Oracle, libere a porta $PORTA${DEMO:+ e a $DEMO_PORTA}:"
+  echo "  Networking > Virtual Cloud Networks > (sua VCN) > Security Lists > Default > Add Ingress Rules"
+  echo "  Source CIDR 0.0.0.0/0 · IP Protocol TCP · Destination Port Range $PORTA${DEMO:+,$DEMO_PORTA}"
+else
+  echo "Pronto! Acesse https://$DOMINIO"
+  if [ -n "$DEMO" ]; then echo "Demonstração: https://$DEMO"; fi
+  echo "Lembre de liberar as portas 80 e 443 na Security List da VCN, no painel da Oracle (se ainda não estiverem)."
+fi
